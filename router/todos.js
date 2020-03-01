@@ -56,8 +56,7 @@ router.post('/', async (req, res) => {
             res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
         } catch(error){
             console.error(error);
-            next(error);
-            return res.status(500).json({
+            res.status(500).json({
                 "error": error
             });
         }    
@@ -93,11 +92,63 @@ router.get('/', async (req, res) => {
         res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
     } catch(error){
         console.error(error);
-        next(error);
-        return res.status(500).json({
+        res.status(500).json({
             "error": error
         });
     }
 });
 
+// 할 일 읽기
+router.get('/:id', async (req, res) => {
+    try{
+        const findTodo = await Todo.findOne({ 
+            where: { id: req.params.id },
+            include: {
+                model: Tags,
+                through:{ attributes: [] }
+            }
+        });
+
+        const responseJson = {};
+        responseJson.id = findTodo.id;
+        responseJson.title = findTodo.title;
+        responseJson.description = findTodo.description;
+        responseJson.tags = new Array;
+        if(findTodo.tags){
+            for(let i = 0; i<findTodo.tags.length; ++i){
+                responseJson.tags.push(findTodo.tags[i].title);
+            }
+        }
+        responseJson.createdAt = findTodo.createdAt;
+        responseJson.updatedAt = findTodo.updatedAt;
+
+        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+    } catch(error){
+        console.error(error);
+        res.status(500).json({
+            "error": error
+        });
+    }
+});
+
+// 할 일 수정
+router.put('/:id', async (req, res) => {
+    if(req.body.title == null) {
+
+    } else {
+        Tags.up
+    }
+
+    if(req.body.description == null) {
+
+    } else {
+
+    }
+
+    if(req.body.tags == null) {
+
+    } else {
+
+    }
+});
 module.exports = router;
