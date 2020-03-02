@@ -7,7 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         },
     },{
         timestamp: false,
-        paranoid: true,
         underscored: false,
     });
 };
