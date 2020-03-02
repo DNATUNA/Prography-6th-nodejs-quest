@@ -10,10 +10,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNULL: false,
             unique: false,
         },
-        isComleted: {
+        isCompleted: {
             type: DataTypes.BOOLEAN,
-            defautlValue: false,
             allowNULL: false,
+            defaultValue: false,
         },
         createdAt: {
             type: DataTypes.DATE,

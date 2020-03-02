@@ -2,7 +2,7 @@ import express from 'express';
 require('dotenv').config();
 
 // 라우터 연결
-const todoRouter = require('../router/todos');
+const todoRouter = require('./router/todos');
 
 // Sequelize 연결
 const { sequelize } = require('../models');

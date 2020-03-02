@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { Todo, Tags } = require('../models');
+const { Todo, Tags } = require('../../models');
 
 // 할 일 등록
 router.post('/', async (req, res) => {
@@ -50,6 +50,7 @@ router.post('/', async (req, res) => {
                     responseJson.tags.push(todoCheck.tags[i].title);
                 }
             }
+            responseJson.isCompleted = todoCheck.isCompleted;
             responseJson.createdAt = todoCheck.createdAt;
             responseJson.updatedAt = todoCheck.updatedAt;
 
@@ -85,6 +86,7 @@ router.get('/', async (req, res) => {
                         responseJson[i].tags.push(todo[i].tags[j].title);
                     }
                 }
+                responseJson[i].isCompleted = todo[i].isCompleted;
                 responseJson[i].createdAt = todo[i].createdAt;
                 responseJson[i].updatedAt = todo[i].updatedAt;
         }
@@ -119,6 +121,7 @@ router.get('/:id', async (req, res) => {
                 responseJson.tags.push(findTodo.tags[i].title);
             }
         }
+        responseJson.isCompleted = findTodo.isCompleted;
         responseJson.createdAt = findTodo.createdAt;
         responseJson.updatedAt = findTodo.updatedAt;
 
@@ -133,22 +136,39 @@ router.get('/:id', async (req, res) => {
 
 // 할 일 수정
 router.put('/:id', async (req, res) => {
-    if(req.body.title == null) {
+    const { title, description, tags } = req.body;
 
-    } else {
-        Tags.up
-    }
+    const todo = await Todo.findOne({ 
+        where: { id: req.params.id },
+        include: {
+            model: Tags,
+            through:{ attributes: [] }
+        }
+    });
 
-    if(req.body.description == null) {
-
-    } else {
-
-    }
-
-    if(req.body.tags == null) {
-
-    } else {
-
+    console.log(todo.tags)
+    
+    if(tags){
+        if(todo.tags){
+            const tagsToArray = new Array;
+            for(let i = 0; i<todo.tags.length; ++i){
+                tagsToArray.push(todo.tags[i].title);
+            }
+            console.log(tagsToArray);
+            const originTags = await Promise.all(tagsToArray.map(tag => Tags.findAll({
+                where: {
+                    title: tag
+                }
+            })));
+            await todo.removeTags(originTags.map(r => r[0]));
+        }
+    
+        const inputTags = await Promise.all(tags.map(tag => Tags.findOrCreate({
+            where: {
+                title: tag
+            }
+        })));
+        await todo.addTags(inputTags.map(r => r[0]));
     }
 });
 module.exports = router;
