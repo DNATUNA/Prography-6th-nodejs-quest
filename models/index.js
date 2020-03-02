@@ -38,9 +38,13 @@ db.Sequelize = Sequelize;
 //테이블 추가
 db.Todo = require('./todo')(sequelize, Sequelize);
 db.Tags = require('./tags')(sequelize, Sequelize);
+db.Comments = require('./comments')(sequelize, Sequelize);
 
 //관계 설정
 db.Todo.belongsToMany(db.Tags, { through: 'TodoTags' });
 db.Tags.belongsToMany(db.Todo, { through: 'TodoTags' });
+
+db.Todo.hasMany(db.Comments);
+db.Comments.belongsTo(db.Todo);
 
 module.exports = db;
