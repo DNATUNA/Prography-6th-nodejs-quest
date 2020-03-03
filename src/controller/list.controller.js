@@ -66,40 +66,83 @@ exports.PostTodoList = async (req, res) => {
 
 // 할 일 목록
 exports.GetTodoLists =  async (req, res) => {
-    try{
-        const todo = await Todo.findAll({
-            include:{
-                model: Tags,
-                through:{ attributes: [] }
-            },
-            order: [
-                [Tags, TodoTags, 'id']
-            ]
-        });
-    
-        const responseJson = new Array;
-        for(let i = 0; i<todo.length; ++i){
-            responseJson.push({});
-            responseJson[i].id = todo[i].id;
-                responseJson[i].title = todo[i].title;
-                responseJson[i].description = todo[i].description;
-                responseJson[i].tags = new Array;
-                if(todo[i].tags){
-                    for(let j = 0; j<todo[i].tags.length; ++j){
-                        responseJson[i].tags.push(todo[i].tags[j].title);
+    if(req.query.order){
+        console.log(Object.keys(req.query.order));
+        const key = Object.keys(req.query.order)[0];
+        const value = req.query.order[key];
+        console.log(value);
+        try{
+            const todo = await Todo.findAll({
+                include:{
+                    model: Tags,
+                    through:{ attributes: [] }
+                },
+                order: [
+                    [key, value],
+                    [Tags, TodoTags, 'id']
+                ]
+            });
+        
+            const responseJson = new Array;
+            for(let i = 0; i<todo.length; ++i){
+                responseJson.push({});
+                responseJson[i].id = todo[i].id;
+                    responseJson[i].title = todo[i].title;
+                    responseJson[i].description = todo[i].description;
+                    responseJson[i].tags = new Array;
+                    if(todo[i].tags){
+                        for(let j = 0; j<todo[i].tags.length; ++j){
+                            responseJson[i].tags.push(todo[i].tags[j].title);
+                        }
                     }
-                }
-                responseJson[i].isCompleted = todo[i].isCompleted;
-                responseJson[i].createdAt = todo[i].createdAt;
-                responseJson[i].updatedAt = todo[i].updatedAt;
+                    responseJson[i].isCompleted = todo[i].isCompleted;
+                    responseJson[i].createdAt = todo[i].createdAt;
+                    responseJson[i].updatedAt = todo[i].updatedAt;
+            }
+        
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        } catch(error){
+            console.error(error);
+            res.status(500).json({
+                "error": error
+            });
         }
-    
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
+    }else{
+        try{
+            const todo = await Todo.findAll({
+                include:{
+                    model: Tags,
+                    through:{ attributes: [] }
+                },
+                order: [
+                    [Tags, TodoTags, 'id']
+                ]
+            });
+        
+            const responseJson = new Array;
+            for(let i = 0; i<todo.length; ++i){
+                responseJson.push({});
+                responseJson[i].id = todo[i].id;
+                    responseJson[i].title = todo[i].title;
+                    responseJson[i].description = todo[i].description;
+                    responseJson[i].tags = new Array;
+                    if(todo[i].tags){
+                        for(let j = 0; j<todo[i].tags.length; ++j){
+                            responseJson[i].tags.push(todo[i].tags[j].title);
+                        }
+                    }
+                    responseJson[i].isCompleted = todo[i].isCompleted;
+                    responseJson[i].createdAt = todo[i].createdAt;
+                    responseJson[i].updatedAt = todo[i].updatedAt;
+            }
+        
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        } catch(error){
+            console.error(error);
+            res.status(500).json({
+                "error": error
+            });
+        }
     }
 }
 
