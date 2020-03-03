@@ -2,6 +2,7 @@
 
 11개의 API개발과 더불어 가산점 항목(정렬, 검색) 개발까지 마쳤습니다. 현재(2020-03-03 22:29 기준) jest로 테스트 시, DB에 테이블이 생성되어 있지 않다면 sequelize.sync를 jest에서 기다려주지 않아 error가 발생합니다. DB에 테이블이 생성되어 있다면 error는 발생하지 않습니다.
 
+- 몇 가지 error 수정과 검토를 위해 아직 dev 브랜치를 master로 merge하지 않았습니다
 - 11개 API 개발 완료
 - 가산점 항목(정렬, 검색) 개발 완료
 - jest sequelize sync error
