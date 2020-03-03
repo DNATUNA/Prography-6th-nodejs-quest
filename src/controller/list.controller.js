@@ -1,4 +1,4 @@
-const { Todo, Tags } = require('../../models');
+const { Todo, Tags, TodoTags } = require('../../models');
 
 // 할 일 등록
 exports.PostTodoList = async (req, res) => {
@@ -35,13 +35,16 @@ exports.PostTodoList = async (req, res) => {
                 include: {
                     model: Tags,
                     through:{ attributes: [] }
-                }
+                },
+                order: [
+                    [Tags, TodoTags, 'id']
+                ]
             });
             
             responseJson.id = todoCheck.id;
             responseJson.title = todoCheck.title;
             responseJson.description = todoCheck.description;
-            responseJson.tags = new Array;
+            responseJson.tags = [];
             if(tags){
                 for(let i = 0; i<todoCheck.tags.length; ++i){
                     responseJson.tags.push(todoCheck.tags[i].title);
@@ -68,7 +71,10 @@ exports.GetTodoLists =  async (req, res) => {
             include:{
                 model: Tags,
                 through:{ attributes: [] }
-            }
+            },
+            order: [
+                [Tags, TodoTags, 'id']
+            ]
         });
     
         const responseJson = new Array;
@@ -105,7 +111,10 @@ exports.ReadSelectedTodoList = async (req, res) => {
             include: {
                 model: Tags,
                 through:{ attributes: [] }
-            }
+            },
+            order: [
+                [Tags, TodoTags, 'id']
+            ]
         });
 
         const responseJson = {};
@@ -208,7 +217,10 @@ exports.ModifyTodoList = async (req, res) => {
                 include: {
                     model: Tags,
                     through:{ attributes: [] }
-                }
+                },
+                order: [
+                    [Tags, TodoTags, 'id']
+                ]
             });
     
             const responseJson = {};
@@ -260,7 +272,10 @@ exports.CompleteTodoList = async (req, res) => {
             include: {
                 model: Tags,
                 through:{ attributes: [] }
-            }
+            },
+            order: [
+                [Tags, TodoTags, 'id']
+            ]
         });
 
         const responseJson = {};

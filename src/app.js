@@ -8,7 +8,12 @@ const todoRouter = require('./router/todos');
 const { sequelize } = require('../models');
 
 const app = express();
-sequelize.sync();
+const sequelizeSet = async () => {
+  await sequelize.sync();
+  console.log('Mysql Syned');
+}
+
+sequelizeSet();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
