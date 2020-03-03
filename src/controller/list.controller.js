@@ -188,28 +188,36 @@ exports.GetTodoLists =  async (req, res) => {
             });
         }
     } else if(req.query.tags){ // tags 검색
-        const whereString = {
-            [Op.and]: []
-        };
-        for(let i=0; i<req.query.tags.length; ++i){
-            whereString[Op.and].push({
-                title: `${req.query.tags[i]}`,
-            });
-        }
-        console.log(whereString);
-        const todo = await Todo.findAll({ 
-            include: {
+        //일단 검색하려는 태그에 해당하는 todolist 검색
+        const todoJustHaveFindedTag = await Todo.findAll({ 
+            include: [{
                 model: Tags,
-                where: {
-                    [Op.and]: [
-                        {
-                            title: "prography"
-                        },
-                        {
-                            title: "new-project"
-                        }
-                    ]
-                } ,
+                where:{
+                    title: {[Op.in]: req.query.tags}
+                },
+                through:{ attributes: [] }
+            }],
+            order: [
+                [Tags, TodoTags, 'id']
+            ]
+        });
+
+        // 검색하려는 태그를 가진 todolist id 배열에 저장
+        const id = new Array;
+        for(let i = 0; i<todoJustHaveFindedTag.length; ++i){
+            id.push(todoJustHaveFindedTag[i].id);
+        }
+        
+        // 해당 todolist 전체 데이터 로드
+        // 정말 신기하게 todoJustHaveFindedTag는 검색된 todolist가 tag를 3개를 가지고 있어도
+        // WHERE tags in [tag1, tag2]에서 [tag1, tag2]에 들어있는 tag만 가지게 된다.
+        // 그래서 검색된 id를 이용하여 재검색을 해준다.
+        const todo = await Todo.findAll({
+            where:{ 
+                id
+            },
+            include:{
+                model:Tags,
                 through:{ attributes: [] }
             },
             order: [
@@ -217,7 +225,24 @@ exports.GetTodoLists =  async (req, res) => {
             ]
         });
 
-        console.log(todo);
+        const responseJson = new Array;
+            for(let i = 0; i<todo.length; ++i){
+                responseJson.push({});
+                responseJson[i].id = todo[i].id;
+                    responseJson[i].title = todo[i].title;
+                    responseJson[i].description = todo[i].description;
+                    responseJson[i].tags = new Array;
+                    if(todo[i].tags){
+                        for(let j = 0; j<todo[i].tags.length; ++j){
+                            responseJson[i].tags.push(todo[i].tags[j].title);
+                        }
+                    }
+                    responseJson[i].isCompleted = todo[i].isCompleted;
+                    responseJson[i].createdAt = todo[i].createdAt;
+                    responseJson[i].updatedAt = todo[i].updatedAt;
+            }
+        
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
     } else{ // 전체 목록
         try{
             const todo = await Todo.findAll({
