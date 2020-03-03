@@ -1,309 +1,44 @@
 const express = require('express');
 const router = express.Router();
 
-const { Todo, Tags, TodoTags} = require('../../models');
+// 컨트롤러 선언
+const listController = require('../controller/list.controller');
+const commentController = require('../controller/comment.controller');
 
+// @@ 할 일 기능들 @@ //
 // 할 일 등록
-router.post('/', async (req, res) => {
-    const { title, description, tags } = req.body;
-    if(title == null){
-        return res.status(400).json({
-            "error": "title 입력은 필수입니다."
-        });
-    } else if(description == null){
-        return res.status(400).json({
-            "error": "description 입력은 필수입니다."
-        });
-    } else{
-        try{
-            // 투두 리스트 추가
-            const todo = await Todo.create({
-                title,
-                description,
-            });
-            // 태그 등록
-            if(tags){
-                const inputTags = await Promise.all(tags.map(tag => Tags.findOrCreate({
-                    where: {
-                        title: tag
-                    }
-                })));
-                await todo.addTags(inputTags.map(r => r[0]));
-            }
-
-            // response json 만들기
-            const responseJson = {};
-            const todoCheck = await Todo.findOne({ 
-                where: { title, createdAt: todo.createdAt },
-                include: {
-                    model: Tags,
-                    through:{ attributes: [] }
-                }
-            });
-            
-            responseJson.id = todoCheck.id;
-            responseJson.title = todoCheck.title;
-            responseJson.description = todoCheck.description;
-            responseJson.tags = new Array;
-            if(tags){
-                for(let i = 0; i<todoCheck.tags.length; ++i){
-                    responseJson.tags.push(todoCheck.tags[i].title);
-                }
-            }
-            responseJson.isCompleted = todoCheck.isCompleted;
-            responseJson.createdAt = todoCheck.createdAt;
-            responseJson.updatedAt = todoCheck.updatedAt;
-
-            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-        } catch(error){
-            console.error(error);
-            res.status(500).json({
-                "error": error
-            });
-        }    
-    }
-});
+router.post('/', listController.PostTodoList);
 
 // 할 일 목록
-router.get('/', async (req, res) => {
-    try{
-        const todo = await Todo.findAll({
-            include:{
-                model: Tags,
-                through:{ attributes: [] }
-            }
-        });
-    
-        const responseJson = new Array;
-        for(let i = 0; i<todo.length; ++i){
-            responseJson.push({});
-            responseJson[i].id = todo[i].id;
-                responseJson[i].title = todo[i].title;
-                responseJson[i].description = todo[i].description;
-                responseJson[i].tags = new Array;
-                if(todo[i].tags){
-                    for(let j = 0; j<todo[i].tags.length; ++j){
-                        responseJson[i].tags.push(todo[i].tags[j].title);
-                    }
-                }
-                responseJson[i].isCompleted = todo[i].isCompleted;
-                responseJson[i].createdAt = todo[i].createdAt;
-                responseJson[i].updatedAt = todo[i].updatedAt;
-        }
-    
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-});
+router.get('/', listController.GetTodoLists);
 
 // 할 일 읽기
-router.get('/:id', async (req, res) => {
-    try{
-        const findTodo = await Todo.findOne({ 
-            where: { id: req.params.id },
-            include: {
-                model: Tags,
-                through:{ attributes: [] }
-            }
-        });
-
-        const responseJson = {};
-        responseJson.id = findTodo.id;
-        responseJson.title = findTodo.title;
-        responseJson.description = findTodo.description;
-        responseJson.tags = new Array;
-        if(findTodo.tags){
-            for(let i = 0; i<findTodo.tags.length; ++i){
-                responseJson.tags.push(findTodo.tags[i].title);
-            }
-        }
-        responseJson.isCompleted = findTodo.isCompleted;
-        responseJson.createdAt = findTodo.createdAt;
-        responseJson.updatedAt = findTodo.updatedAt;
-
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-});
+router.get('/:id', listController.ReadSelectedTodoList);
 
 // 할 일 수정
-router.put('/:id', async (req, res) => {
-    const { title, description, tags } = req.body;
-    
-    if((title == null) && (description == null) && (tags == null)){
-        res.status(500).json({
-            "error": "body가 비어있거나 Key값이 틀렸습니다."
-        });
-    }
-    try{
-        // 제목이 들어왔다면 수정
-        if(title){
-            await Todo.update({
-                title
-            }, {
-                where: {
-                    id: req.params.id
-                }
-            }
-            );
-        }
-
-        // 설명이 들어왔다면 수정
-        if(description){
-            await Todo.update({
-                description
-            }, {
-                where: {
-                    id: req.params.id
-                }
-            });
-        }
-        
-        // 태그가 들어왔다면 수정
-        if(tags){
-            const todo = await Todo.findOne({ 
-                where: { id: req.params.id },
-                include: {
-                    model: Tags,
-                    through:{ attributes: [] }
-                }
-            });
-
-            if(todo.tags){
-                const tagsToArray = new Array;
-                for(let i = 0; i<todo.tags.length; ++i){
-                    tagsToArray.push(todo.tags[i].title);
-                }
-                console.log(tagsToArray);
-                const originTags = await Promise.all(tagsToArray.map(tag => Tags.findAll({
-                    where: {
-                        title: tag
-                    }
-                })));
-                await todo.removeTags(originTags.map(r => r[0]));
-            }
-        
-            const inputTags = await Promise.all(tags.map(tag => Tags.findOrCreate({
-                where: {
-                    title: tag
-                }
-            })));
-            await todo.addTags(inputTags.map(r => r[0]));
-        }
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-
-    // 출력
-    try{
-        const findTodo = await Todo.findOne({ 
-            where: { id: req.params.id },
-            include: {
-                model: Tags,
-                through:{ attributes: [] }
-            }
-        });
-
-        const responseJson = {};
-        responseJson.id = findTodo.id;
-        responseJson.title = findTodo.title;
-        responseJson.description = findTodo.description;
-        responseJson.tags = new Array;
-        if(findTodo.tags){
-            for(let i = 0; i<findTodo.tags.length; ++i){
-                responseJson.tags.push(findTodo.tags[i].title);
-            }
-        }
-        responseJson.isCompleted = findTodo.isCompleted;
-        responseJson.createdAt = findTodo.createdAt;
-        responseJson.updatedAt = findTodo.updatedAt;
-
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-
-    
-});
-module.exports = router;
+router.put('/:id', listController.ModifyTodoList);
 
 // 할 일 완료
-router.put('/:id/complete', async (req, res) => {
-    try{
-        await Todo.update({
-            isCompleted: true
-        }, {
-            where: {
-                id: req.params.id
-            }
-        }
-        );
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-
-    // 출력
-    try{
-        const findTodo = await Todo.findOne({ 
-            where: { id: req.params.id },
-            include: {
-                model: Tags,
-                through:{ attributes: [] }
-            }
-        });
-
-        const responseJson = {};
-        responseJson.id = findTodo.id;
-        responseJson.title = findTodo.title;
-        responseJson.description = findTodo.description;
-        responseJson.tags = new Array;
-        if(findTodo.tags){
-            for(let i = 0; i<findTodo.tags.length; ++i){
-                responseJson.tags.push(findTodo.tags[i].title);
-            }
-        }
-        responseJson.isCompleted = findTodo.isCompleted;
-        responseJson.createdAt = findTodo.createdAt;
-        responseJson.updatedAt = findTodo.updatedAt;
-
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-});
+router.put('/:id/complete', listController.CompleteTodoList);
 
 // 할 일 삭제
-router.delete('/:id', async (req, res) => {
-    try{
-        await Todo.destroy({where: {id: req.params.id}});
+router.delete('/:id', listController.DeleteTodoList);
 
-        res.status(200).json({
-            "msg": "success"
-        });
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
-    }
-});
+
+// @@ 댓글 기능들 @@ //
+// 댓글 등록
+router.post('/:id/comments', commentController.PostComment);
+
+// 댓글 목록
+router.get('/:id/comments', commentController.GetComments);
+
+// 댓글 읽기
+router.get('/:todoId/comments/:commentId', commentController.ReadSelectedComment);
+
+// 댓글 수정
+router.put('/:todoId/comments/:commentId', commentController.ModifyComment);
+
+// 댓글 삭제
+router.delete('/:todoId/comments/:commentId', commentController.DeleteComment);
+
+module.exports = router;
