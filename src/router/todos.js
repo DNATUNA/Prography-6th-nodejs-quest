@@ -9,7 +9,7 @@ const commentController = require('../controller/comment.controller');
 // 할 일 등록
 router.post('/', listController.PostTodoList);
 
-// 할 일 목록
+// 할 일 목록 + 추가 과제 < 정렬 > + 추가 과제 < 검색 >
 router.get('/', listController.GetTodoLists);
 
 // 할 일 읽기
