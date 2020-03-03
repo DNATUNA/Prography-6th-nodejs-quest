@@ -1,3 +1,12 @@
+# 개발 현황
+
+11개의 API개발과 더불어 가산점 항목(정렬, 검색) 개발까지 마쳤습니다. 현재(2020-03-03 22:29 기준) jest로 테스트 시, DB에 테이블이 생성되어 있지 않다면 sequelize.sync를 jest에서 기다려주지 않아 error가 발생합니다. DB에 테이블이 생성되어 있다면 error는 발생하지 않습니다.
+
+- 11개 API 개발 완료
+- 가산점 항목(정렬, 검색) 개발 완료
+- jest sequelize sync error
+- null 값 request 시 response 전부 확인 필요
+
 # Prography 6th NodeJS Quest
 
 > 프로그파피 NodeJS 전형의 비중은 **면접(70%), 과제(30%)** 입니다. 과제의 완성도보다 **면접**이 더 중요합니다.
