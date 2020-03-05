@@ -2,26 +2,31 @@ const { Comments } = require('../../models');
 
 // 댓글 등록
 exports.PostComment = async (req, res) => {
-    try{
-        console.log(req.params.id);
-        const { contents } = req.body;
-        const comment = await Comments.create({
-            contents,
-            todoId: req.params.id
-        });
-    
-        const responseJson = {};
-        responseJson.id = comment.id;
-        responseJson.contents = comment.contents;
-        responseJson.createdAt = comment.createdAt;
-        responseJson.updatedAt = comment.updatedAt;
-    
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
-    } catch(error){
-        console.error(error);
-        res.status(500).json({
-            "error": error
-        });
+    if(req.body.contents == "" || req.body.contents == null){
+        res.status(401).json({
+            "error": "contents키 값이 비어있거나 키가 없습니다"
+        })
+    } else{
+        try{
+            const { contents } = req.body;
+            const comment = await Comments.create({
+                contents,
+                todoId: req.params.id
+            });
+            
+            const responseJson = {};
+            responseJson.id = comment.id;
+            responseJson.contents = comment.contents;
+            responseJson.createdAt = comment.createdAt;
+            responseJson.updatedAt = comment.updatedAt;
+        
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        } catch(error){
+            console.error(error);
+            res.status(500).json({
+                "error": error
+            });
+        }
     }
 }
 
@@ -59,14 +64,19 @@ exports.ReadSelectedComment = async (req, res) => {
                 todoId: req.params.todoId
             }
         });
-    
-        const responseJson = {};
-        responseJson.id = comment.id;
-        responseJson.contents = comment.contents;
-        responseJson.createdAt = comment.createdAt;
-        responseJson.updatedAt = comment.updatedAt;
-    
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        if(comment == null){
+            res.status(404).json({
+                "error": "해당 id의 comment가 없습니다"
+            })
+        } else{
+            const responseJson = {};
+            responseJson.id = comment.id;
+            responseJson.contents = comment.contents;
+            responseJson.createdAt = comment.createdAt;
+            responseJson.updatedAt = comment.updatedAt;
+        
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        }
     } catch(error){
         console.error(error);
         res.status(500).json({
@@ -79,8 +89,8 @@ exports.ReadSelectedComment = async (req, res) => {
 exports.ModifyComment = async (req, res) => {
     const { contents } = req.body;
     if(contents == null){
-        res.status(500).json({
-            "error": "body가 비어있거나 Key값이 틀렸습니다."
+        res.status(401).json({
+            "error": "content가 비었거나 Key가 틀렸습니다"
         });
     } else{
         try{
@@ -127,16 +137,26 @@ exports.ModifyComment = async (req, res) => {
 // 댓글 삭제
 exports.DeleteComment = async (req, res) => {
     try{
-        await Comments.destroy({
+        const comment = await Comments.findOne({
             where: {
                 id: req.params.commentId,
                 todoId: req.params.todoId
             }
         });
-
-        res.status(200).json({
-            "msg": "success"
-        });
+        if(comment == null){
+    
+        } else{
+            await Comments.destroy({
+                where: {
+                    id: req.params.commentId,
+                    todoId: req.params.todoId
+                }
+            });
+    
+            res.status(200).json({
+                "msg": "success"
+            });
+        }
     } catch(error){
         console.error(error);
         res.status(500).json({
