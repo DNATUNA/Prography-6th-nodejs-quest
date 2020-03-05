@@ -1,12 +1,25 @@
-# 개발 현황
+# 과제 현황
 
-11개의 API개발과 더불어 가산점 항목(정렬, 검색) 개발까지 마쳤습니다. 현재(2020-03-03 22:29 기준) jest로 테스트 시, DB에 테이블이 생성되어 있지 않다면 sequelize.sync를 jest에서 기다려주지 않아 error가 발생합니다. DB에 테이블이 생성되어 있다면 error는 발생하지 않습니다.
+11개의 API개발과 더불어 가산점 항목 개발을 마쳤습니다. 도움 주신 프로그라피 관계자 분들 정말 감사드립니다. validation check는 완벽하지 않을 수 있습니다. 최대한 고려하며 개발에 임했습니다. 바쁘신 와중 과제 검사까지 정말 고생 많으십니다. 최대한 검사 환경 구축에 도움을 드리고 싶어 몇 가지 사항에 대해 작성해놨습니다. 코로나 걸리지 않도록 건강 유의하세요!
 
-- 몇 가지 error 수정과 검토를 위해 아직 dev 브랜치를 master로 merge하지 않았습니다
-- 11개 API 개발 완료
-- 가산점 항목(정렬, 검색) 개발 완료
-- jest sequelize sync error
-- null 값 request 시 response 전부 확인 필요
+## .env Setting
+
+원활한 사전 과제 검사를 위해, sequelize 설정을 .env에 작성해주셔야 합니다. 아래 항목을 .env 파일에 추가하신 뒤 실행해주시면 됩니다. 혹시나 하여 .example.env 수정도 해놨습니다.
+
+```env
+MYSQL_USERNAME=
+MYSQL_PASSWORD=
+MYSQL_HOST=
+MYSQL_DIALECT=
+MYSQL_PORT=
+SEQUELIZE_OPERATORS_BOOLEAN=false
+#SEQUELIZE_OPERATORS_BOOLEAN 세팅은 false로 두고 개발했습니다.
+
+MYSQL_DATABASE_DEVELOPMENT=
+MYSQL_DATABASE_PRODUCTION=
+MYSQL_DATABASE_TEST=
+```
+
 
 # Prography 6th NodeJS Quest
 
