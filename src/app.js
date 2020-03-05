@@ -8,12 +8,17 @@ const todoRouter = require('./router/todos');
 const { sequelize } = require('../models');
 
 const app = express();
-const sequelizeSet = async () => {
-  await sequelize.sync();
-  console.log('Mysql Syned');
-}
 
-sequelizeSet();
+// 귺산 님의 솔루션!
+// 이 코드로 jest에서 sync 문제를 해결할 수 있다.
+let isInitialized = false;
+app.use(async (req, res, next) => {
+  if(!isInitialized) {
+    await sequelize.sync();
+    isInitialized = true;
+  }
+  next();
+})
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

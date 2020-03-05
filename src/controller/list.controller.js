@@ -5,11 +5,11 @@ const Op = sequelize.Op;
 // 할 일 등록
 exports.PostTodoList = async (req, res) => {
     const { title, description, tags } = req.body;
-    if(title == null){
+    if(title == null || title == ""){
         return res.status(400).json({
             "error": "title 입력은 필수입니다."
         });
-    } else if(description == null){
+    } else if(description == null || description == ""){
         return res.status(400).json({
             "error": "description 입력은 필수입니다."
         });
@@ -120,6 +120,7 @@ exports.GetTodoLists =  async (req, res) => {
                     through:{ attributes: [] }
                 },
                 order: [
+                    ['id', 'ASC'],
                     [Tags, TodoTags, 'id']
                 ]
             });
@@ -159,6 +160,7 @@ exports.GetTodoLists =  async (req, res) => {
                     through:{ attributes: [] }
                 },
                 order: [
+                    ['id', 'ASC'],
                     [Tags, TodoTags, 'id']
                 ]
             });
@@ -188,44 +190,46 @@ exports.GetTodoLists =  async (req, res) => {
             });
         }
     } else if(req.query.tags){ // tags 검색
-        //일단 검색하려는 태그에 해당하는 todolist 검색
-        const todoJustHaveFindedTag = await Todo.findAll({ 
-            include: [{
-                model: Tags,
-                where:{
-                    title: {[Op.in]: req.query.tags}
+        try{
+            //일단 검색하려는 태그에 해당하는 todolist 검색
+            const todoJustHaveFindedTag = await Todo.findAll({ 
+                include: [{
+                    model: Tags,
+                    where:{
+                        title: {[Op.in]: req.query.tags}
+                    },
+                    through:{ attributes: [] }
+                }],
+                order: [
+                    ['id', 'ASC'],
+                    [Tags, TodoTags, 'id']
+                ]
+            });
+
+            // 검색하려는 태그를 가진 todolist id 배열에 저장
+            const id = new Array;
+            for(let i = 0; i<todoJustHaveFindedTag.length; ++i){
+                id.push(todoJustHaveFindedTag[i].id);
+            }
+            
+            // 해당 todolist 전체 데이터 로드
+            // 정말 신기하게 todoJustHaveFindedTag는 검색된 todolist가 tag를 3개를 가지고 있어도
+            // WHERE tags in [tag1, tag2]에서 [tag1, tag2]에 들어있는 tag만 가지게 된다.
+            // 그래서 검색된 id를 이용하여 재검색을 해준다.
+            const todo = await Todo.findAll({
+                where:{ 
+                    id
                 },
-                through:{ attributes: [] }
-            }],
-            order: [
-                [Tags, TodoTags, 'id']
-            ]
-        });
+                include:{
+                    model:Tags,
+                    through:{ attributes: [] }
+                },
+                order: [
+                    [Tags, TodoTags, 'id']
+                ]
+            });
 
-        // 검색하려는 태그를 가진 todolist id 배열에 저장
-        const id = new Array;
-        for(let i = 0; i<todoJustHaveFindedTag.length; ++i){
-            id.push(todoJustHaveFindedTag[i].id);
-        }
-        
-        // 해당 todolist 전체 데이터 로드
-        // 정말 신기하게 todoJustHaveFindedTag는 검색된 todolist가 tag를 3개를 가지고 있어도
-        // WHERE tags in [tag1, tag2]에서 [tag1, tag2]에 들어있는 tag만 가지게 된다.
-        // 그래서 검색된 id를 이용하여 재검색을 해준다.
-        const todo = await Todo.findAll({
-            where:{ 
-                id
-            },
-            include:{
-                model:Tags,
-                through:{ attributes: [] }
-            },
-            order: [
-                [Tags, TodoTags, 'id']
-            ]
-        });
-
-        const responseJson = new Array;
+            const responseJson = new Array;
             for(let i = 0; i<todo.length; ++i){
                 responseJson.push({});
                 responseJson[i].id = todo[i].id;
@@ -243,6 +247,13 @@ exports.GetTodoLists =  async (req, res) => {
             }
         
             res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        } catch(error){
+            console.error(error);
+            res.status(500).json({
+                "error": error
+            });
+        }
+        
     } else{ // 전체 목록
         try{
             const todo = await Todo.findAll({
@@ -251,6 +262,7 @@ exports.GetTodoLists =  async (req, res) => {
                     through:{ attributes: [] }
                 },
                 order: [
+                    ['id', 'ASC'],
                     [Tags, TodoTags, 'id']
                 ]
             });
@@ -295,22 +307,27 @@ exports.ReadSelectedTodoList = async (req, res) => {
                 [Tags, TodoTags, 'id']
             ]
         });
-
-        const responseJson = {};
-        responseJson.id = findTodo.id;
-        responseJson.title = findTodo.title;
-        responseJson.description = findTodo.description;
-        responseJson.tags = new Array;
-        if(findTodo.tags){
-            for(let i = 0; i<findTodo.tags.length; ++i){
-                responseJson.tags.push(findTodo.tags[i].title);
+        if(findTodo == null){
+            res.status(404).json({
+                "error": "해당 게시물이 존재하지 않습니다"
+            })
+        } else {
+            const responseJson = {};
+            responseJson.id = findTodo.id;
+            responseJson.title = findTodo.title;
+            responseJson.description = findTodo.description;
+            responseJson.tags = new Array;
+            if(findTodo.tags){
+                for(let i = 0; i<findTodo.tags.length; ++i){
+                    responseJson.tags.push(findTodo.tags[i].title);
+                }
             }
-        }
-        responseJson.isCompleted = findTodo.isCompleted;
-        responseJson.createdAt = findTodo.createdAt;
-        responseJson.updatedAt = findTodo.updatedAt;
+            responseJson.isCompleted = findTodo.isCompleted;
+            responseJson.createdAt = findTodo.createdAt;
+            responseJson.updatedAt = findTodo.updatedAt;
 
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        }
     } catch(error){
         console.error(error);
         res.status(500).json({
@@ -324,63 +341,72 @@ exports.ModifyTodoList = async (req, res) => {
     const { title, description, tags } = req.body;
     
     if((title == null) && (description == null) && (tags == null)){
-        res.status(500).json({
+        res.status(401).json({
             "error": "body가 비어있거나 Key값이 틀렸습니다."
         });
     } else {
         try{
-            // 제목이 들어왔다면 수정
-            if(title){
-                await Todo.update({
-                    title
-                }, {
-                    where: {
-                        id: req.params.id
+            let checkExistId = await Todo.findOne({
+                where: { id: req.params.id }
+            });
+            if(checkExistId == null){
+                res.status(404).json({
+                    "error": "해당 게시물이 존재하지 않습니다"
+                })
+            } else{
+                // 제목이 들어왔다면 수정
+                if(title){
+                    await Todo.update({
+                        title
+                    }, {
+                        where: {
+                            id: req.params.id
+                        }
+                    });
+                }
+        
+                // 설명이 들어왔다면 수정
+                if(description){
+                    await Todo.update({
+                        description
+                    }, {
+                        where: {
+                            id: req.params.id
+                        }
+                    });
+                }
+                
+                // 태그가 들어왔다면 수정
+                if(tags){
+                    const todo = await Todo.findOne({ 
+                        where: { id: req.params.id },
+                        include: {
+                            model: Tags,
+                            through:{ attributes: [] }
+                        }
+                    });
+        
+                    if(todo.tags){
+                        const tagsToArray = new Array;
+                        for(let i = 0; i<todo.tags.length; ++i){
+                            tagsToArray.push(todo.tags[i].title);
+                        }
+                        console.log(tagsToArray);
+                        const originTags = await Promise.all(tagsToArray.map(tag => Tags.findAll({
+                            where: {
+                                title: tag
+                            }
+                        })));
+                        await todo.removeTags(originTags.map(r => r[0]));
                     }
-                });
-            }
-    
-            // 설명이 들어왔다면 수정
-            if(description){
-                await Todo.update({
-                    description
-                }, {
-                    where: {
-                        id: req.params.id
-                    }
-                });
-            }
-            
-            // 태그가 들어왔다면 수정
-            if(tags){
-                const todo = await Todo.findOne({ 
-                    where: { id: req.params.id },
-                    include: {
-                        model: Tags,
-                        through:{ attributes: [] }
-                    }
-                });
-    
-                if(todo.tags){
-                    const tagsToArray = new Array;
-                    for(let i = 0; i<todo.tags.length; ++i){
-                        tagsToArray.push(todo.tags[i].title);
-                    }
-                    console.log(tagsToArray);
-                    const originTags = await Promise.all(tagsToArray.map(tag => Tags.findAll({
+                
+                    const inputTags = await Promise.all(tags.map(tag => Tags.findOrCreate({
                         where: {
                             title: tag
                         }
                     })));
-                    await todo.removeTags(originTags.map(r => r[0]));
+                    await todo.addTags(inputTags.map(r => r[0]));
                 }
-            
-                const inputTags = await Promise.all(tags.map(tag => Tags.findOrCreate({
-                    where: {
-                        title: tag
-                    }
-                })));
-                await todo.addTags(inputTags.map(r => r[0]));
             }
         } catch(error){
             console.error(error);
@@ -401,22 +427,28 @@ exports.ModifyTodoList = async (req, res) => {
                     [Tags, TodoTags, 'id']
                 ]
             });
-    
-            const responseJson = {};
-            responseJson.id = findTodo.id;
-            responseJson.title = findTodo.title;
-            responseJson.description = findTodo.description;
-            responseJson.tags = new Array;
-            if(findTodo.tags){
-                for(let i = 0; i<findTodo.tags.length; ++i){
-                    responseJson.tags.push(findTodo.tags[i].title);
+            
+            if(findTodo == null){
+                res.status(404).json({
+                    "error": "해당 게시물이 존재하지 않습니다"
+                })
+            } else{
+                const responseJson = {};
+                responseJson.id = findTodo.id;
+                responseJson.title = findTodo.title;
+                responseJson.description = findTodo.description;
+                responseJson.tags = new Array;
+                if(findTodo.tags){
+                    for(let i = 0; i<findTodo.tags.length; ++i){
+                        responseJson.tags.push(findTodo.tags[i].title);
+                    }
                 }
+                responseJson.isCompleted = findTodo.isCompleted;
+                responseJson.createdAt = findTodo.createdAt;
+                responseJson.updatedAt = findTodo.updatedAt;
+        
+                res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
             }
-            responseJson.isCompleted = findTodo.isCompleted;
-            responseJson.createdAt = findTodo.createdAt;
-            responseJson.updatedAt = findTodo.updatedAt;
-    
-            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
         } catch(error){
             console.error(error);
             res.status(500).json({
@@ -429,14 +461,22 @@ exports.ModifyTodoList = async (req, res) => {
 // 할 일 완료
 exports.CompleteTodoList = async (req, res) => {
     try{
-        await Todo.update({
-            isCompleted: true
-        }, {
-            where: {
-                id: req.params.id
-            }
+        let checkExistId = await Todo.findOne({
+            where: { id: req.params.id }
+        });
+        if(checkExistId == null){
+            res.status(404).json({
+                "error": "해당 게시물이 존재하지 않습니다"
+            })
+        } else{
+            await Todo.update({
+                isCompleted: true
+            }, {
+                where: {
+                    id: req.params.id
+                }
+            });
         }
-        );
     } catch(error){
         console.error(error);
         res.status(500).json({
@@ -457,21 +497,27 @@ exports.CompleteTodoList = async (req, res) => {
             ]
         });
 
-        const responseJson = {};
-        responseJson.id = findTodo.id;
-        responseJson.title = findTodo.title;
-        responseJson.description = findTodo.description;
-        responseJson.tags = new Array;
-        if(findTodo.tags){
-            for(let i = 0; i<findTodo.tags.length; ++i){
-                responseJson.tags.push(findTodo.tags[i].title);
+        if(findTodo == null){
+            res.status(404).json({
+                "error": "해당 게시물이 존재하지 않습니다"
+            })
+        } else{
+            const responseJson = {};
+            responseJson.id = findTodo.id;
+            responseJson.title = findTodo.title;
+            responseJson.description = findTodo.description;
+            responseJson.tags = new Array;
+            if(findTodo.tags){
+                for(let i = 0; i<findTodo.tags.length; ++i){
+                    responseJson.tags.push(findTodo.tags[i].title);
+                }
             }
-        }
-        responseJson.isCompleted = findTodo.isCompleted;
-        responseJson.createdAt = findTodo.createdAt;
-        responseJson.updatedAt = findTodo.updatedAt;
+            responseJson.isCompleted = findTodo.isCompleted;
+            responseJson.createdAt = findTodo.createdAt;
+            responseJson.updatedAt = findTodo.updatedAt;
 
-        res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+            res.status(200).json(JSON.parse(JSON.stringify(responseJson)));
+        }
     } catch(error){
         console.error(error);
         res.status(500).json({
@@ -483,15 +529,24 @@ exports.CompleteTodoList = async (req, res) => {
 // 할 일 삭제
 exports.DeleteTodoList = async (req, res) => {
     try{
-        await Todo.destroy({where: {id: req.params.id}});
-
-        res.status(200).json({
-            "msg": "success"
+        let checkExistId = await Todo.findOne({
+            where: { id: req.params.id }
         });
+        if(checkExistId == null){
+            res.status(404).json({
+                "error": "해당 게시물이 존재하지 않습니다"
+            })
+        } else{
+            await Todo.destroy({where: {id: req.params.id}});
+
+            res.status(200).json({
+                "msg": "success"
+            });
+        }
     } catch(error){
         console.error(error);
         res.status(500).json({
-            "error": error
+            "error": "해당 id의 todo가 없습니다"
         });
     }
 }
