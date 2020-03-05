@@ -4,7 +4,7 @@
 
 ## .env Setting
 
-원활한 사전 과제 검사를 위해, sequelize 설정을 .env에 작성해주셔야 합니다. 아래 항목을 .env 파일에 추가하신 뒤 실행해주시면 됩니다. 혹시나 하여 .example.env 수정도 해놨습니다.
+원활한 사전 과제 검사를 위해, sequelize 설정을 .env에 작성해주셔야 합니다. 아래 항목을 .env 파일에 추가하신 뒤 실행해주시면 됩니다. 편의를 위해 .example.env 수정도 해놨습니다.
 
 ```env
 MYSQL_USERNAME=
@@ -20,6 +20,16 @@ MYSQL_DATABASE_PRODUCTION=
 MYSQL_DATABASE_TEST=
 ```
 
+## Using DB & ORM
+
+- sequelize
+- mysql
+
+
+## Git 브랜치
+
+- dev 브랜치 기준으로 모든 개발을 진행하였고, feature 별로 dev에서 브랜치를 생성하여 개발했습니다. 개발을 마친 이후 v0.1로 master에 merge했습니다. list(할 일), comment(댓글), order(정렬), search(검색), bugFix(코드 수정)으로 feature를 나눴습니다.
+- search 브랜치는 order 브랜치에서 생성했습니다. [#3](/../../pull/3)
 
 # Prography 6th NodeJS Quest
 
